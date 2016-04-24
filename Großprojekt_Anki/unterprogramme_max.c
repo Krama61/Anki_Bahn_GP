@@ -66,9 +66,12 @@
 #include "att.h"
 #include "gatt.h"
 
-//Muss eingebunden / Festgelegt werden damit set_speed Eins weiter unten Funktioniert
+
+// Hinzufügen von Festgelegten Sachen von Example
+
 
 static GAttrib *attrib = NULL;
+
 
 typedef struct anki_vehicle {
     struct gatt_char read_char;
@@ -76,6 +79,7 @@ typedef struct anki_vehicle {
 } anki_vehicle_t;
 
 static anki_vehicle_t vehicle;
+
 
 static enum state {
     STATE_DISCONNECTED,
@@ -90,8 +94,7 @@ static enum state {
     rl_printf(COLOR_RED "Command Failed: " COLOR_OFF fmt, ## arg)
 
 
-
-//Eigentilche Funktion set_speed
+//Funktion set_speed hier wird Das Fahrzeug bewegt von 0- ca 2000
 
 static void set_speed(int inspeed, int inaccel)
 {
@@ -111,13 +114,39 @@ static void set_speed(int inspeed, int inaccel)
         value = (uint8_t *)&msg;
 
         gatt_write_char(attrib, handle, value, plen,
-                                        NULL, NULL); // WICHTIG SENDEN????
+                                        NULL, NULL);
 }
 
 
+
+// Funktion Change Lane Eingabe von Integern um Linenwechsel vorzunehmen offset von Roadcenter in mm?!
+
+
+static void change_lane(int inspeed, int inaccel, int inoffset)
+{
+
+        int handle = vehicle.write_char.value_handle;
+
+        int16_t hspeed = inspeed;
+        int16_t haccel = inaccel;
+        float offset = 1.0;
+        offset = inoffset, NULL;
+
+
+        //rl_printf("changing lane at %d (accel = %d | offset = %1.2f)\n", hspeed, haccel, offset);
+
+        anki_vehicle_msg_t msg;
+        size_t plen = anki_vehicle_msg_set_offset_from_road_center(&msg, 0.0);
+        gatt_write_char(attrib, handle, (uint8_t*)&msg, plen, NULL, NULL);
+
+        anki_vehicle_msg_t lane_msg;
+        size_t lane_plen = anki_vehicle_msg_change_lane(&lane_msg, hspeed, haccel, offset);
+        gatt_write_char(attrib, handle, (uint8_t*)&lane_msg, lane_plen, NULL, NULL);
+}
+
 int main1()
 {
-   // printl("Hello World!");
     set_speed(1000,1000);
+    change_lane(1000,1000,50);
 }
 
